@@ -185,7 +185,6 @@ public class GemCollector extends BaseGame {
 
 	private void initPlayers(){
 		player1 = new Cube("Player_1");
-		player1.translate(0, 1, 25);
 		player1.rotate(-180, new Vector3D(0,1,0));
 		addGameWorldObject(player1);
 		
@@ -193,6 +192,10 @@ public class GemCollector extends BaseGame {
 		camera1.setPerspectiveFrustum(60, 1, 1, 1000);
 		camera1.setViewport(0.0, 1.0, 0.0, 1);
 		
+	}
+	
+	public void initPlayerLocation(Vector3D loc){
+		player1.translate((float)loc.getX(), (float)loc.getY(), (float)loc.getZ());
 	}
 	
 	private void initSkyBox(){
@@ -392,14 +395,15 @@ public class GemCollector extends BaseGame {
 	
 	public void update(float elapsedTimeMS){
 		super.update(elapsedTimeMS);
+		cam1Controller.update(elapsedTimeMS);
+		player1Update(elapsedTimeMS);
 		
 		if(gameClient != null){
+			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
 		
-		cam1Controller.update(elapsedTimeMS);
-
-		player1Update(elapsedTimeMS);
+//		System.out.println(player1.getLocalTranslation().toString());
 	}
 	
 	private void player1Update(float elapsedTimeMS){
@@ -450,13 +454,27 @@ public class GemCollector extends BaseGame {
 		}
 		display.close();
 	}
+	
+	public void addGhost(SceneNode ghost){
+		System.out.println("ghost added");
+		ghost.updateWorldBound();
+		addGameWorldObject(ghost);
+	}
+	
 	public void setIsConnected(boolean b) {
 		// TODO Auto-generated method stub
 		
 	}
-	public Vector3D getPlayerPosition() {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public Matrix3D getPlayerPosition() {
+		Matrix3D playerM = new Matrix3D();
+		playerM.concatenate(player1.getLocalTranslation());
+		playerM.concatenate(player1.getLocalRotation());
+//		playerM.concatenate(player1.getLocalRotation());
+		return playerM;
 	}
 	
+	public void printString(String str){
+		System.out.println(str);
+	}
 }
