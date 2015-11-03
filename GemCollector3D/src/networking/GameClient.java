@@ -28,10 +28,9 @@ public class GameClient extends GameConnectionClient{
 		String[] msgTokens = message.split(",");
 		
 		if(msgTokens[0].compareTo("join") == 0){
-			game.printString("success connecting");
 
 			if(msgTokens[1].compareTo("success") == 0){
-//				game.setIsConnected(true);
+				game.setIsConnected(true);
 				sendCreateMessage(game.getPlayerPosition());
 			}
 			
@@ -53,9 +52,7 @@ public class GameClient extends GameConnectionClient{
 		}
 		
 		if(msgTokens[0].compareTo("create") == 0){
-			game.printString("create received");
 			UUID ghostID = UUID.fromString(msgTokens[1]);
-//			String[] loc = msgTokens[2].split(" ");
 			createGhostAvatar(ghostID, stringToMatrix(msgTokens[2]));
 		}
 		
@@ -99,7 +96,6 @@ public class GameClient extends GameConnectionClient{
 	private void updateGhost(UUID ghostID, Matrix3D m){
 		for(GhostAvatar g: ghostAvatars){
 			if(g.getID().equals(ghostID)){
-				System.out.println("update");
 				g.update(m);
 			}
 		}
@@ -135,8 +131,6 @@ public class GameClient extends GameConnectionClient{
 			String message = new String("create," + id.toString());
 			message += "," + m.toString();
 			sendPacket(message);
-			game.printString("sending create");
-			game.printString(m.toString());
 		} catch(IOException e){
 			e.printStackTrace();
 		}

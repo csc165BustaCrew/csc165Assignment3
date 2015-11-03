@@ -470,11 +470,7 @@ public class GemCollector extends BaseGame {
 		Matrix3D playerM = new Matrix3D();
 		playerM.concatenate(player1.getLocalTranslation());
 		playerM.concatenate(player1.getLocalRotation());
-//		playerM.concatenate(player1.getLocalRotation());
 		return playerM;
 	}
-	
-	public void printString(String str){
-		System.out.println(str);
-	}
+
 }
