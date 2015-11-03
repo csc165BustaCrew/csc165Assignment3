@@ -461,9 +461,12 @@ public class GemCollector extends BaseGame {
 		addGameWorldObject(ghost);
 	}
 	
+	public void removeGhost(SceneNode ghost){
+		removeGameWorldObject(ghost);
+	}
+	
 	public void setIsConnected(boolean b) {
 		// TODO Auto-generated method stub
-		
 	}
 	
 	public Matrix3D getPlayerPosition() {

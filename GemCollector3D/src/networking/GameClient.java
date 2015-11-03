@@ -122,8 +122,11 @@ public class GameClient extends GameConnectionClient{
 	}
 
 	private void removeGhostAvatar(UUID ghostID) {
-		// TODO Auto-generated method stub
-		
+		for(GhostAvatar g: ghostAvatars){
+			if(g.getID().equals(ghostID)){
+				game.removeGhost(g.getGhost());
+			}
+		}
 	}
 
 	public void sendCreateMessage(Matrix3D m){
