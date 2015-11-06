@@ -2,11 +2,19 @@ package game;
 
 
 import java.awt.Color;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import javax.script.*;
+
+import com.sun.xml.internal.ws.api.pipe.Engine;
 
 import bullet.CubeBullet;
 import events.CrashEvent;
@@ -34,20 +42,24 @@ import inputActions.StrafeLeftAction;
 import inputActions.StrafeRightAction;
 import inputActions.YawNegAction;
 import inputActions.YawPosAction;
-import myGameEngine.Camera3PController;
+import myGameEngine.Camera3Pcontroller;
 import myGameEngine.Camera3PMouseKeyboard;
 import myGameEngine.MyDisplaySystem;
 import myGameEngine.MySpinController;
 import myGameEngine.MyTranslateController;
+import myGameEngine.MyTerrain;
 import sage.display.IDisplaySystem;
 import sage.event.EventManager;
 import sage.event.IEventManager;
 import sage.scene.shape.Cube;
 import sage.scene.shape.Line;
 import sage.scene.shape.Pyramid;
+import sage.texture.Texture;
+import sage.texture.TextureManager;
 import sage.scene.Group;
 import sage.scene.HUDString;
 import sage.scene.SceneNode;
+import sage.scene.SkyBox;
 import sage.app.BaseGame;
 import sage.camera.ICamera;
 import sage.camera.JOGLCamera;
@@ -70,11 +82,13 @@ public class GemCollector extends BaseGame {
 	private HUDString player1HPString;
 	private HUDString player1GameOverString;
 	
+	private MyTerrain tb = new MyTerrain();
 	private Plane ground;
 	private Plane backWall;
 	private Plane frontWall;
 	private Plane leftWall;
 	private Plane rightWall;
+	private SkyBox skybox;
 	
 	private Arrow arrow;
 	private MyCube cubeList[] = new MyCube[5];
@@ -97,6 +111,10 @@ public class GemCollector extends BaseGame {
 	private String serverAddr;
 	private int serverPort;
 	private ProtocolType serverProtocol;
+	
+	private boolean scriptCheck = true;
+	ScriptEngineManager factory = new ScriptEngineManager();
+	private ScriptEngine engine = factory.getEngineByName("js");
 	
 	public GemCollector(String serverAddr, int serverPort){
 		super();
@@ -124,12 +142,21 @@ public class GemCollector extends BaseGame {
 		
 		renderer = getDisplaySystem().getRenderer();
 		
-		initPlayers();
-		initGameObjects();
-		initWorldAxis();
-		initInput();
-		initSkyBox();
-		initEvents();
+		if(scriptCheck){
+			initSkyBox();
+			initPlayers();
+			initGameObjects();
+			initScript();
+			initInput();
+			initEvents();
+		}else{
+			initSkyBox();
+			initPlayers();
+			initGameObjects();
+			initWorldAxis();
+			initInput();
+			initEvents();
+		}
 		
 		//HUD
 		player1ScoreString = new HUDString("Score= " + player1Score);
@@ -142,6 +169,27 @@ public class GemCollector extends BaseGame {
 		
 	}
 	
+	private void initScript() {
+		String scriptName = "src" + File.separator + "jscripts" + File.separator + "CreateWorld.js";
+		List<ScriptEngineFactory> list = factory.getEngineFactories();
+		File scriptFile = new File(scriptName);
+		
+		try{
+			FileReader fileReader = new FileReader(scriptFile);
+			engine.eval(fileReader);
+			fileReader.close();
+		}catch (FileNotFoundException e1){
+			System.out.println(scriptName + " not found "+ e1);
+		}catch (IOException e2){
+			System.out.println("IO issue detected "+ scriptName + e2);
+		}catch (ScriptException e3){
+			System.out.println("ScriptException in " + scriptName + e3);
+		}catch (NullPointerException e4){
+			System.out.println("Null pointer in" + scriptName + e4);
+		}
+		addGameWorldObject((SceneNode) engine.get("worldAxis"));
+	}
+
 	public void start(){
 		super.start();
 	}
@@ -191,7 +239,6 @@ public class GemCollector extends BaseGame {
 		camera1 = new JOGLCamera(renderer);
 		camera1.setPerspectiveFrustum(60, 1, 1, 1000);
 		camera1.setViewport(0.0, 1.0, 0.0, 1);
-		
 	}
 	
 	public void initPlayerLocation(Vector3D loc){
@@ -199,6 +246,20 @@ public class GemCollector extends BaseGame {
 	}
 	
 	private void initSkyBox(){
+		skybox = new SkyBox("SkyBox", 20.0f, 20.0f, 20.0f);
+		Texture nTexture = TextureManager.loadTexture2D("src/Textures/SkyBox/northSkybox.bmp");
+		Texture sTexture = TextureManager.loadTexture2D("src/Textures/SkyBox/southSkybox.bmp");
+		Texture eTexture = TextureManager.loadTexture2D("src/Textures/SkyBox/eastSkybox.bmp");
+		Texture wTexture = TextureManager.loadTexture2D("src/Textures/SkyBox/westSkybox.bmp");
+		Texture uTexture = TextureManager.loadTexture2D("src/Textures/SkyBox/upSkybox.bmp");
+		skybox.setTexture(SkyBox.Face.North, nTexture);
+		skybox.setTexture(SkyBox.Face.South, sTexture);
+		skybox.setTexture(SkyBox.Face.East, eTexture);
+		skybox.setTexture(SkyBox.Face.West, wTexture);
+		skybox.setTexture(SkyBox.Face.Up, uTexture);
+		addGameWorldObject(skybox);
+		//TODO: the rest should probably be in terrain once we get to it
+		
 		ground = new Plane(Color.DARK_GRAY);
 		Matrix3D planeM = ground.getLocalRotation(); 
 		planeM.translate(0, -10, 0);
@@ -209,7 +270,7 @@ public class GemCollector extends BaseGame {
 		ground.setLocalScale(planeM); 
 		addGameWorldObject(ground); 
 		ground.updateWorldBound();
-
+		/*
 		backWall = new Plane(Color.LIGHT_GRAY);
 		planeM = new Matrix3D();
 		planeM.translate(0, 0, 100);
@@ -251,6 +312,11 @@ public class GemCollector extends BaseGame {
 		rightWall.setLocalScale(planeM);
 		rightWall.updateWorldBound();
 		addGameWorldObject(rightWall);
+		*/
+	}
+	
+	private void initTerrain(){
+		addGameWorldObject(tb.initTerrain());
 	}
 	
 	private void initGameObjects(){
@@ -402,7 +468,10 @@ public class GemCollector extends BaseGame {
 			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
-		
+		//initScript();
+		Matrix3D camTranslation = new Matrix3D();
+		camTranslation.translate(camera1.getLocation().getX(), camera1.getLocation().getY(), camera1.getLocation().getZ());
+		skybox.setLocalTranslation(camTranslation);
 //		System.out.println(player1.getLocalTranslation().toString());
 	}
 	
@@ -470,7 +539,6 @@ public class GemCollector extends BaseGame {
 		Matrix3D playerM = new Matrix3D();
 		playerM.concatenate(player1.getLocalTranslation());
 		playerM.concatenate(player1.getLocalRotation());
-//		playerM.concatenate(player1.getLocalRotation());
 		return playerM;
 	}
 	

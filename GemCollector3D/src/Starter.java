@@ -2,6 +2,6 @@ import game.GemCollector;
 
 public class Starter {
 	public static void main(String[] args) {
-		new GemCollector("127.0.0.1", 502).start();
+		new GemCollector("130.86.65.78", 502).start();
 	}
 }

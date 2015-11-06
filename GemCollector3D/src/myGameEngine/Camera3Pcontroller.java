@@ -13,7 +13,7 @@ import sage.input.action.IAction;
 import sage.scene.SceneNode;
 import sage.util.MathUtils;
 
-public class Camera3PController {
+public class Camera3Pcontroller {
 	private ICamera cam;
 	private SceneNode target;
 	private float tempAzimuth;
@@ -28,7 +28,7 @@ public class Camera3PController {
 	private boolean reset = false;
 	
 
-	public Camera3PController(ICamera cam, SceneNode target, IInputManager inputMgr, String controllerName){
+	public Camera3Pcontroller(ICamera cam, SceneNode target, IInputManager inputMgr, String controllerName){
 		this.cam = cam;
 		this.target = target;
 		worldUpVec = new Vector3D(0, 1, 0);
