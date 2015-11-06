@@ -45,7 +45,6 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 		
 		if(msgTokens[0].compareTo("create") == 0) {
 			UUID clientID = UUID.fromString(msgTokens[1]);
-//			String[] pos = {msgTokens[2], msgTokens[3], msgTokens[4]};
 			String pos = msgTokens[2];
 			sendCreateMessages(clientID, pos);
 			sendWantsDetailsMessages(clientID);
@@ -82,8 +81,12 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 	}
 
 	private void sendByeMessages(UUID clientID) {
-		// TODO Auto-generated method stub
-		
+		try{
+			String msg = "bye," + clientID.toString();
+			forwardPacketToAll(msg, clientID);
+		} catch (IOException e){
+			e.printStackTrace();
+		}
 	}
 	
 	public void updatePlayers(UUID clientID, String loc){
@@ -125,7 +128,7 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 			
 			if(success) {
 				message += "success";
-				System.out.print("joined");
+				System.out.println("joined");
 			}
 			else {
 				message += "failure";
@@ -141,8 +144,6 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 		try {
 			String message = new String("create," + clientID.toString());
 			message += "," + position;
-//			message += "," + position[1];
-//			message += "," + position[2];
 			System.out.println("create ghost");
 			forwardPacketToAll(message, clientID);
 		} catch(IOException e){
