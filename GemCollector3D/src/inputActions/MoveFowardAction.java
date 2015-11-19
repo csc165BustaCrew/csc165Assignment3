@@ -1,12 +1,14 @@
 package inputActions;
 
 
-import javafx.geometry.Point3D;
+
 import graphicslib3D.Matrix3D;
+import graphicslib3D.Point3D;
 import graphicslib3D.Vector3D;
 import net.java.games.input.Event;
 import sage.input.action.AbstractInputAction;
 import sage.scene.SceneNode;
+import sage.terrain.TerrainBlock;
 
 public class MoveFowardAction extends AbstractInputAction {
 	private SceneNode avatar;
@@ -20,7 +22,8 @@ public class MoveFowardAction extends AbstractInputAction {
 
 	@Override
 	public void performAction(float time, Event e) {
-		updateVerticalPosition();
+		//TODO initialize this using physics
+		//updateVerticalPosition();
 		if(e.getValue() > 0.08f){
 			Matrix3D rot = avatar.getLocalRotation();
 			Vector3D dir = new Vector3D(0,0,1);

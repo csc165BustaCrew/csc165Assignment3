@@ -27,6 +27,9 @@ import sage.input.*;
 import sage.input.IInputManager.INPUT_ACTION_TYPE;
 import sage.input.action.IAction;
 import sage.networking.IGameConnection.ProtocolType;
+import sage.physics.IPhysicsEngine;
+import sage.physics.IPhysicsObject;
+import sage.physics.PhysicsEngineFactory;
 import sage.renderer.IRenderer;
 import graphicslib3D.Matrix3D;
 import graphicslib3D.Point3D;
@@ -54,11 +57,13 @@ import sage.event.IEventManager;
 import sage.scene.shape.Cube;
 import sage.scene.shape.Line;
 import sage.scene.shape.Pyramid;
+import sage.terrain.TerrainBlock;
 import sage.texture.Texture;
 import sage.texture.TextureManager;
 import sage.scene.Group;
 import sage.scene.HUDString;
 import sage.scene.SceneNode;
+import sage.scene.SceneNode.CULL_MODE;
 import sage.scene.SkyBox;
 import sage.app.BaseGame;
 import sage.camera.ICamera;
@@ -83,12 +88,16 @@ public class GemCollector extends BaseGame {
 	private HUDString player1GameOverString;
 	
 	private MyTerrain tb = new MyTerrain();
+	private TerrainBlock worldMap;
 	private Plane ground;
 	private Plane backWall;
 	private Plane frontWall;
 	private Plane leftWall;
 	private Plane rightWall;
 	private SkyBox skybox;
+	private IPhysicsEngine physicsEngine;
+	private IPhysicsObject groundPlaneP;
+	private IPhysicsObject player;
 	
 	private Arrow arrow;
 	private MyCube cubeList[] = new MyCube[5];
@@ -123,6 +132,11 @@ public class GemCollector extends BaseGame {
 		this.serverProtocol = ProtocolType.TCP;
 	}
 	
+	//TODO Add these values to script
+	float ballMass = 1.0f;
+	float up[] = {0,0,1};
+	
+	
 	public void initGame(){
 		try{
 			this.gameClient = new GameClient(InetAddress.getByName(serverAddr), serverPort, serverProtocol, this);
@@ -143,21 +157,24 @@ public class GemCollector extends BaseGame {
 		renderer = getDisplaySystem().getRenderer();
 		
 		if(scriptCheck){
+			initPhysics();
 			initSkyBox();
-			initPlayers();
+			initTerrain();
 			initGameObjects();
+			initPlayers();
 			initScript();
 			initInput();
 			initEvents();
 		}else{
+			initPhysics();
 			initSkyBox();
-			initPlayers();
+			initTerrain();
 			initGameObjects();
+			initPlayers();
 			initWorldAxis();
 			initInput();
 			initEvents();
 		}
-		
 		//HUD
 		player1ScoreString = new HUDString("Score= " + player1Score);
 		player1ScoreString.setLocation(0.9, 0.05);
@@ -166,7 +183,6 @@ public class GemCollector extends BaseGame {
 		
 		player1HPString = new HUDString("HP: " + player1HP);
 		camera1.addToHUD(player1HPString);
-		
 	}
 	
 	private void initScript() {
@@ -192,6 +208,14 @@ public class GemCollector extends BaseGame {
 
 	public void start(){
 		super.start();
+	}
+	
+	private void initPhysics(){
+		String engine = "sage.physics.JBullet.JBulletPhysicsEngine";
+		physicsEngine = PhysicsEngineFactory.createPhysicsEngine(engine);
+		physicsEngine.initSystem();
+		float[] gravity = {0, -1f, 0};
+		physicsEngine.setGravity(gravity);
 	}
 	
 	protected void initSystem(){
@@ -234,6 +258,11 @@ public class GemCollector extends BaseGame {
 	private void initPlayers(){
 		player1 = new Cube("Player_1");
 		player1.rotate(-180, new Vector3D(0,1,0));
+		player1.translate(30, 60, 30);
+		player1.setWorldTranslation(player1.getLocalTranslation());
+		player = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, player1.getWorldTransform().getValues(),1.0f);
+		player.setBounciness(1.0f);
+		player1.setPhysicsObject(player);
 		addGameWorldObject(player1);
 		
 		camera1 = new JOGLCamera(renderer);
@@ -258,65 +287,18 @@ public class GemCollector extends BaseGame {
 		skybox.setTexture(SkyBox.Face.West, wTexture);
 		skybox.setTexture(SkyBox.Face.Up, uTexture);
 		addGameWorldObject(skybox);
-		//TODO: the rest should probably be in terrain once we get to it
-		
-		ground = new Plane(Color.DARK_GRAY);
-		Matrix3D planeM = ground.getLocalRotation(); 
-		planeM.translate(0, -10, 0);
-		planeM.rotate(90, new Vector3D(1,0,0));
-		ground.setLocalRotation(planeM); 		
-		planeM = ground.getLocalScale(); 		
-		planeM.scale(1000,1000,1); 		
-		ground.setLocalScale(planeM); 
-		addGameWorldObject(ground); 
-		ground.updateWorldBound();
-		/*
-		backWall = new Plane(Color.LIGHT_GRAY);
-		planeM = new Matrix3D();
-		planeM.translate(0, 0, 100);
-		backWall.setLocalRotation(planeM);
-		planeM = backWall.getLocalScale();
-		planeM.scale(1000, 1000, 1);
-		backWall.setLocalScale(planeM);
-		backWall.updateWorldBound();
-		addGameWorldObject(backWall);
-		
-		frontWall = new Plane(Color.LIGHT_GRAY);
-		planeM = new Matrix3D();
-		planeM.translate(0, 0, -100);
-		frontWall.setLocalRotation(planeM);
-		planeM = frontWall.getLocalScale();
-		planeM.scale(1000, 1000, 1);
-		frontWall.setLocalScale(planeM);
-		frontWall.updateWorldBound();
-		addGameWorldObject(frontWall);
-		
-		leftWall = new Plane(Color.LIGHT_GRAY);
-		planeM = new Matrix3D();
-		planeM.translate(-100, 0, 0);
-		planeM.rotate(90, new Vector3D(0,1,0));
-		leftWall.setLocalRotation(planeM);
-		planeM = leftWall.getLocalScale();
-		planeM.scale(1000, 1000, 1);
-		leftWall.setLocalScale(planeM);
-		leftWall.updateWorldBound();
-		addGameWorldObject(leftWall);
-		
-		rightWall = new Plane(Color.LIGHT_GRAY);
-		planeM = new Matrix3D();
-		planeM.translate(100, 0, 0);
-		planeM.rotate(90, new Vector3D(0,1,0));
-		rightWall.setLocalRotation(planeM);
-		planeM = rightWall.getLocalScale();
-		planeM.scale(1000, 1000, 1);
-		rightWall.setLocalScale(planeM);
-		rightWall.updateWorldBound();
-		addGameWorldObject(rightWall);
-		*/
 	}
 	
 	private void initTerrain(){
-		addGameWorldObject(tb.initTerrain());
+		worldMap = tb.initTerrain(display);
+		worldMap.setCullMode(CULL_MODE.NEVER);
+		worldMap.updateLocalBound();
+		worldMap.setShowBound(true);
+		addGameWorldObject(worldMap);
+		groundPlaneP = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), worldMap.getWorldTransform().getValues(), up, 0.0f);
+		groundPlaneP.setBounciness(1.0f);
+		worldMap.setPhysicsObject(groundPlaneP);
+		//TODO why can objects go through this?
 	}
 	
 	private void initGameObjects(){
@@ -333,12 +315,11 @@ public class GemCollector extends BaseGame {
 			otherCube = new MyCube();
 			tempM = otherCube.getLocalTranslation();
 			if(i > 10){
-				tempM.translate(rand.nextInt(30)*-1, 0, rand.nextInt(30)*-1);
+				tempM.translate(rand.nextInt(30)*-1, 10, rand.nextInt(30)*-1);
 			}
-			tempM.translate(rand.nextInt(30)+1, 0, rand.nextInt(30)+1);
+			tempM.translate(rand.nextInt(30)+1, 10, rand.nextInt(30)+1);
 			otherCube.setLocalTranslation(tempM);
 			otherCube.updateWorldBound();
-//			addGameWorldObject(otherCube);
 			group2.addChild(otherCube);
 			cubeList[i] = otherCube;
 		}
@@ -353,7 +334,6 @@ public class GemCollector extends BaseGame {
 			tempM.translate(rand.nextInt(30), 0, rand.nextInt(45)*-1);
 			otherCylinder.setLocalTranslation(tempM);
 			otherCylinder.updateWorldBound();
-//			addGameWorldObject(otherCylinder);
 			group2.addChild(otherCylinder);
 			cylinderList[i] = otherCylinder;
 		}
@@ -368,7 +348,6 @@ public class GemCollector extends BaseGame {
 			tempM.translate(rand.nextInt(30), 0, rand.nextInt(45)*-1);
 			otherPyramid.setLocalTranslation(tempM);
 			otherPyramid.updateWorldBound();
-//			addGameWorldObject(otherPyramid);
 			group2.addChild(otherPyramid);
 			pyramidList[i] = otherPyramid;
 		}
@@ -381,6 +360,12 @@ public class GemCollector extends BaseGame {
 		
 		group2.addController(spinController);
 		spinController.addControlledNode(group2);
+		
+		
+		IPhysicsObject ballP;
+		ballP = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, group1.getWorldTransform().getValues(),1.0f);
+		ballP.setBounciness(1.0f);
+		group1.setPhysicsObject(ballP);
 		
 		addGameWorldObject(group1);
 		super.update(0);
@@ -409,7 +394,7 @@ public class GemCollector extends BaseGame {
 	
 		IAction quitGame = new QuitGameAction(this);
 		
-		MoveFowardAction mvFoward = new MoveFowardAction(player1);
+		MoveFowardAction mvFoward = new MoveFowardAction(player1, worldMap);
 		MoveBackwardAction mvBackward = new MoveBackwardAction(player1);
 		StrafeLeftAction strafeLeftAction = new StrafeLeftAction(player1);
 		StrafeRightAction strafeRightAction = new StrafeRightAction(player1);
@@ -429,14 +414,7 @@ public class GemCollector extends BaseGame {
 		im.associateAction(kbName, Identifier.Key.UP, pitchPosAction, REPEAT_WHILE_DOWN);
 		im.associateAction(kbName, Identifier.Key.DOWN, pitchNegAction, REPEAT_WHILE_DOWN);
 		im.associateAction(kbName, Identifier.Key.ESCAPE, quitGame, ON_PRESS_ONLY);
-		
-//		if(gpName != null){
-//			MoveOnYAxisAction moveOnY = new MoveOnYAxisAction(player2);
-//			MoveOnXAxisAction moveOnX = new MoveOnXAxisAction(player2);
-//			im.associateAction(gpName, Identifier.Axis.Y, moveOnY, REPEAT_WHILE_DOWN);
-//			im.associateAction(gpName, Identifier.Axis.X, moveOnX, REPEAT_WHILE_DOWN);
-//			im.associateAction(gpName, Identifier.Button._1, quitGame, ON_PRESS_ONLY);
-//		}
+
 		String mouseName = im.getMouseName();
 		cam1Controller = new Camera3PMouseKeyboard(camera1, player1, im, mouseName);
 		
@@ -468,14 +446,13 @@ public class GemCollector extends BaseGame {
 			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
-		//initScript();
 		Matrix3D camTranslation = new Matrix3D();
 		camTranslation.translate(camera1.getLocation().getX(), camera1.getLocation().getY(), camera1.getLocation().getZ());
 		skybox.setLocalTranslation(camTranslation);
-//		System.out.println(player1.getLocalTranslation().toString());
 	}
 	
 	private void player1Update(float elapsedTimeMS){
+		/* TODO Remove this once physics is working
 		for(int i = 0; i< cubeList.length; i++){
 			if((cubeList[i]).getWorldBound().intersects(player1.getWorldBound()) &&  cubeList[i].isAlive()){
 				p1Scored();
@@ -496,7 +473,18 @@ public class GemCollector extends BaseGame {
 				pyramidList[i].setDead(false, player1Score);
 			}
 		}
-		
+		*/
+		physicsEngine.update(20.0f);
+		Matrix3D mat;
+		Vector3D translateVec;
+		for (SceneNode s : getGameWorld()){
+			if (s.getPhysicsObject() != null){
+				System.out.println(s.getName());
+				mat = new Matrix3D(s.getPhysicsObject().getTransform());
+				translateVec = mat.getCol(3);
+				s.getLocalTranslation().setCol(3,translateVec);
+			}
+		}
 		player1ScoreString.setText("Score = " + player1Score);
 		player1HPString.setText("HP: " + player1HP);
 	}
