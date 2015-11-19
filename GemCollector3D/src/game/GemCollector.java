@@ -26,6 +26,7 @@ import gameObjects.Plane;
 import sage.input.*;
 import sage.input.IInputManager.INPUT_ACTION_TYPE;
 import sage.input.action.IAction;
+import sage.model.loader.OBJLoader;
 import sage.networking.IGameConnection.ProtocolType;
 import sage.physics.IPhysicsEngine;
 import sage.physics.IPhysicsObject;
@@ -65,6 +66,7 @@ import sage.scene.HUDString;
 import sage.scene.SceneNode;
 import sage.scene.SceneNode.CULL_MODE;
 import sage.scene.SkyBox;
+import sage.scene.TriMesh;
 import sage.app.BaseGame;
 import sage.camera.ICamera;
 import sage.camera.JOGLCamera;
@@ -100,11 +102,11 @@ public class GemCollector extends BaseGame {
 	private IPhysicsObject player;
 	
 	private Arrow arrow;
-	private MyCube cubeList[] = new MyCube[5];
-	private MyCylinder cylinderList[] = new MyCylinder[5];
+	private TriMesh cubeList[] = new TriMesh[5];
+	private TriMesh cylinderList[] = new TriMesh[5];
 	private MyPyramid pyramidList[] = new MyPyramid[5]; 
 	
-	private SceneNode player1;
+	private TriMesh player1;
 	private IDisplaySystem display;
 	private ICamera camera1;
 	private Camera3PMouseKeyboard cam1Controller;
@@ -124,6 +126,9 @@ public class GemCollector extends BaseGame {
 	private boolean scriptCheck = true;
 	ScriptEngineManager factory = new ScriptEngineManager();
 	private ScriptEngine engine = factory.getEngineByName("js");
+	
+	private OBJLoader objLoader = new OBJLoader();
+	
 	
 	public GemCollector(String serverAddr, int serverPort){
 		super();
@@ -256,7 +261,8 @@ public class GemCollector extends BaseGame {
 	}
 
 	private void initPlayers(){
-		player1 = new Cube("Player_1");
+		player1 = objLoader.loadModel("chicken.obj");
+		player1.updateLocalBound();
 		player1.rotate(-180, new Vector3D(0,1,0));
 		player1.translate(30, 60, 30);
 		player1.setWorldTranslation(player1.getLocalTranslation());
@@ -309,10 +315,10 @@ public class GemCollector extends BaseGame {
 		arrow = new Arrow();
 		addGameWorldObject(arrow);
 		Matrix3D tempM;
-		MyCube otherCube;
+		TriMesh otherCube;
 		Random rand = new Random();
 		for(int i = 0; i < cubeList.length; i++){
-			otherCube = new MyCube();
+			otherCube = objLoader.loadModel("car.obj");
 			tempM = otherCube.getLocalTranslation();
 			if(i > 10){
 				tempM.translate(rand.nextInt(30)*-1, 10, rand.nextInt(30)*-1);
@@ -324,9 +330,9 @@ public class GemCollector extends BaseGame {
 			cubeList[i] = otherCube;
 		}
 		
-		MyCylinder otherCylinder;
+		TriMesh otherCylinder;
 		for(int i = 0; i < cylinderList.length; i++){
-			otherCylinder = new MyCylinder();
+			otherCylinder = objLoader.loadModel("truck.obj");
 			tempM = otherCylinder.getLocalTranslation();
 			if(i > 10){
 				tempM.translate(rand.nextInt(30)*-1, 0, rand.nextInt(45)*-1);
