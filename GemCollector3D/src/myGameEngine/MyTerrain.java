@@ -3,6 +3,7 @@ package myGameEngine;
 import graphicslib3D.Point3D;
 import graphicslib3D.Vector3D;
 import sage.display.IDisplaySystem;
+import sage.scene.state.RenderState.RenderStateType;
 import sage.scene.state.TextureState;
 import sage.terrain.AbstractHeightMap;
 import sage.terrain.ImageBasedHeightMap;
@@ -17,19 +18,18 @@ public class MyTerrain {
 	private String name;
 	
 	public TerrainBlock initTerrain(IDisplaySystem display){
-		ImageBasedHeightMap myHeightMap = new ImageBasedHeightMap("src/Textures/Ground/map1GroundFile.png");
+		ImageBasedHeightMap myHeightMap = new ImageBasedHeightMap("src/Textures/Ground/roadWIPGroundFile.png");
 		TerrainBlock imageTerrain = createTerBlock(myHeightMap);
-		//TODO fix textures
-		/*
-		TextureState grassState;
-		Texture grassTexture = TextureManager.loadTexture2D("texturez_4758.jpg");
-		grassTexture.setApplyMode(sage.texture.Texture.ApplyMode.Replace);
-		grassState = (TextureState) display.getRenderer().createRenderState(RenderState.RenderStateType.Texture);
+
+		TextureState roadState;
+		Texture roadTexture = TextureManager.loadTexture2D("src/Textures/Ground/road_road_0024_01_s.jpg");
+		roadTexture.setApplyMode(sage.texture.Texture.ApplyMode.Replace);
+		roadState = (TextureState) display.getRenderer().createRenderState(RenderStateType.Texture);
 		
-		grassState.setTexture(grassTexture,0);
-		grassState.setEnabled(true);
-		imageTerrain.setRenderState(grassState);
-		*/
+		roadState.setTexture(roadTexture,0);
+		roadState.setEnabled(true);
+		imageTerrain.setRenderState(roadState);
+
 		return imageTerrain;
 	}
 	

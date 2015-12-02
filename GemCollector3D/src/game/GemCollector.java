@@ -19,6 +19,7 @@ import com.sun.xml.internal.ws.api.pipe.Engine;
 import bullet.CubeBullet;
 import events.CrashEvent;
 import gameObjects.Arrow;
+import gameObjects.Gem;
 import gameObjects.MyCube;
 import gameObjects.MyCylinder;
 import gameObjects.MyPyramid;
@@ -100,6 +101,10 @@ public class GemCollector extends BaseGame {
 	private IPhysicsEngine physicsEngine;
 	private IPhysicsObject groundPlaneP;
 	private IPhysicsObject player;
+	private IPhysicsObject truckP;
+	private IPhysicsObject truckPArray[] = new IPhysicsObject[5];
+	private IPhysicsObject carP;
+	private IPhysicsObject carPArray[] = new IPhysicsObject[5];
 	
 	private Arrow arrow;
 	private TriMesh cubeList[] = new TriMesh[5];
@@ -139,7 +144,7 @@ public class GemCollector extends BaseGame {
 	
 	//TODO Add these values to script
 	float ballMass = 1.0f;
-	float up[] = {0,0,1};
+	float up[] = {0,1,0};
 	
 	
 	public void initGame(){
@@ -219,7 +224,7 @@ public class GemCollector extends BaseGame {
 		String engine = "sage.physics.JBullet.JBulletPhysicsEngine";
 		physicsEngine = PhysicsEngineFactory.createPhysicsEngine(engine);
 		physicsEngine.initSystem();
-		float[] gravity = {0, -1f, 0};
+		float[] gravity = {0, -10f, 0};
 		physicsEngine.setGravity(gravity);
 	}
 	
@@ -261,13 +266,14 @@ public class GemCollector extends BaseGame {
 	}
 
 	private void initPlayers(){
-		player1 = objLoader.loadModel("chicken.obj");
+		player1 = objLoader.loadModel("src/Models/chicken.obj");
 		player1.updateLocalBound();
-		player1.rotate(-180, new Vector3D(0,1,0));
-		player1.translate(30, 60, 30);
+		//player1.rotate(180, new Vector3D(0,1,0));
+		player1.translate(30, 15, 30);
 		player1.setWorldTranslation(player1.getLocalTranslation());
+		//player1.updateGeometricState(1.0f, true);
 		player = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, player1.getWorldTransform().getValues(),1.0f);
-		player.setBounciness(1.0f);
+		player.setBounciness(0.0f);
 		player1.setPhysicsObject(player);
 		addGameWorldObject(player1);
 		
@@ -297,50 +303,60 @@ public class GemCollector extends BaseGame {
 	
 	private void initTerrain(){
 		worldMap = tb.initTerrain(display);
-		worldMap.setCullMode(CULL_MODE.NEVER);
-		worldMap.updateLocalBound();
-		worldMap.setShowBound(true);
-		addGameWorldObject(worldMap);
-		groundPlaneP = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), worldMap.getWorldTransform().getValues(), up, 0.0f);
+		//worldMap.setCullMode(CULL_MODE.NEVER);
+		//worldMap.updateLocalBound();
+		//worldMap.setShowBound(true);
+
+		groundPlaneP = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), worldMap.getWorldTransform().getValues(), up, 12.0f);
 		groundPlaneP.setBounciness(1.0f);
 		worldMap.setPhysicsObject(groundPlaneP);
-		//TODO why can objects go through this?
+		addGameWorldObject(worldMap);
 	}
 	
 	private void initGameObjects(){
-		group1 = new Group();
-		group2 = new Group();
-		
-		group1.addChild(group2);
+		//group1 = new Group();
+		//group2 = new Group();
+		//group1.addChild(group2);
 		arrow = new Arrow();
 		addGameWorldObject(arrow);
 		Matrix3D tempM;
 		TriMesh otherCube;
 		Random rand = new Random();
 		for(int i = 0; i < cubeList.length; i++){
-			otherCube = objLoader.loadModel("car.obj");
+			otherCube = objLoader.loadModel("src/Models/car.obj");
 			tempM = otherCube.getLocalTranslation();
 			if(i > 10){
-				tempM.translate(rand.nextInt(30)*-1, 10, rand.nextInt(30)*-1);
+				tempM.translate(rand.nextInt(30)*1, 30, rand.nextInt(30)*1);
 			}
-			tempM.translate(rand.nextInt(30)+1, 10, rand.nextInt(30)+1);
+			tempM.translate(rand.nextInt(30)+1, 30, rand.nextInt(30)+1);
 			otherCube.setLocalTranslation(tempM);
 			otherCube.updateWorldBound();
-			group2.addChild(otherCube);
+			otherCube.updateGeometricState(1.0f, true);
+			float angVeloc[] = {rand.nextInt(10), rand.nextInt(10), rand.nextInt(10)};
+			carPArray[i] = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, otherCube.getWorldTransform().getValues(),1.0f);
+			carPArray[i].setBounciness(1.0f);
+			carPArray[i].setAngularVelocity(angVeloc);
+			otherCube.setPhysicsObject(carPArray[i]);
+			addGameWorldObject(otherCube);
+			//group2.addChild(otherCube);
 			cubeList[i] = otherCube;
 		}
 		
 		TriMesh otherCylinder;
 		for(int i = 0; i < cylinderList.length; i++){
-			otherCylinder = objLoader.loadModel("truck.obj");
+			otherCylinder = objLoader.loadModel("src/Models/truck.obj");
 			tempM = otherCylinder.getLocalTranslation();
-			if(i > 10){
-				tempM.translate(rand.nextInt(30)*-1, 0, rand.nextInt(45)*-1);
-			}
-			tempM.translate(rand.nextInt(30), 0, rand.nextInt(45)*-1);
+			//if(i > 10){
+			//	tempM.translate(rand.nextInt(30)*1, 30, rand.nextInt(30)*1);
+			//}
+			tempM.translate(rand.nextInt(90), 90, rand.nextInt(90));
 			otherCylinder.setLocalTranslation(tempM);
 			otherCylinder.updateWorldBound();
-			group2.addChild(otherCylinder);
+			truckPArray[i] = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, otherCylinder.getWorldTransform().getValues(),1.0f);
+			truckPArray[i].setBounciness(0.5f);
+			otherCylinder.setPhysicsObject(truckPArray[i]);
+			addGameWorldObject(otherCylinder);
+			//group2.addChild(otherCylinder);
 			cylinderList[i] = otherCylinder;
 		}
 		
@@ -348,32 +364,36 @@ public class GemCollector extends BaseGame {
 		for(int i = 0; i < pyramidList.length; i++){
 			otherPyramid = new MyPyramid();
 			tempM = otherPyramid.getLocalTranslation();
+			//if(i > 10){
+			//	tempM.translate(rand.nextInt(30)*-1, 0, rand.nextInt(45)*-1);
+			//}
+			//tempM.translate(rand.nextInt(30), 0, rand.nextInt(45)*-1);
 			if(i > 10){
-				tempM.translate(rand.nextInt(30)*-1, 0, rand.nextInt(45)*-1);
+				tempM.translate(rand.nextInt(30)*1, 30, rand.nextInt(30)*1);
 			}
-			tempM.translate(rand.nextInt(30), 0, rand.nextInt(45)*-1);
+			tempM.translate(rand.nextInt(30)+1, 30, rand.nextInt(30)+1);
 			otherPyramid.setLocalTranslation(tempM);
 			otherPyramid.updateWorldBound();
-			group2.addChild(otherPyramid);
+			addGameWorldObject(otherPyramid);
+			//group2.addChild(otherPyramid);
 			pyramidList[i] = otherPyramid;
 		}
 		
-		MyTranslateController transController = new MyTranslateController();
-		spinController = new MySpinController();
+		//MyTranslateController transController = new MyTranslateController();
+		//spinController = new MySpinController();
 		
-		group1.addController(transController);
-		transController.addControlledNode(group1);
+		//group1.addController(transController);
+		//transController.addControlledNode(group1);
 		
-		group2.addController(spinController);
-		spinController.addControlledNode(group2);
+		//group2.addController(spinController);
+		//spinController.addControlledNode(group2);
 		
 		
-		IPhysicsObject ballP;
-		ballP = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, group1.getWorldTransform().getValues(),1.0f);
-		ballP.setBounciness(1.0f);
-		group1.setPhysicsObject(ballP);
+		//ballP = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, group1.getWorldTransform().getValues(),1.0f);
+		//ballP.setBounciness(1.0f);
+		//group1.setPhysicsObject(ballP);
 		
-		addGameWorldObject(group1);
+		//addGameWorldObject(group1);
 		super.update(0);
 	}
 	
@@ -401,9 +421,9 @@ public class GemCollector extends BaseGame {
 		IAction quitGame = new QuitGameAction(this);
 		
 		MoveFowardAction mvFoward = new MoveFowardAction(player1, worldMap);
-		MoveBackwardAction mvBackward = new MoveBackwardAction(player1);
-		StrafeLeftAction strafeLeftAction = new StrafeLeftAction(player1);
-		StrafeRightAction strafeRightAction = new StrafeRightAction(player1);
+		MoveBackwardAction mvBackward = new MoveBackwardAction(player1, worldMap);
+		StrafeLeftAction strafeLeftAction = new StrafeLeftAction(player1, worldMap);
+		StrafeRightAction strafeRightAction = new StrafeRightAction(player1, worldMap);
 		
 		YawPosAction yawPosAction = new YawPosAction(player1);
 		YawNegAction yawNegAction = new YawNegAction(player1);
@@ -446,58 +466,46 @@ public class GemCollector extends BaseGame {
 	public void update(float elapsedTimeMS){
 		super.update(elapsedTimeMS);
 		cam1Controller.update(elapsedTimeMS);
-		player1Update(elapsedTimeMS);
 		
 		if(gameClient != null){
 			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
-		Matrix3D camTranslation = new Matrix3D();
-		camTranslation.translate(camera1.getLocation().getX(), camera1.getLocation().getY(), camera1.getLocation().getZ());
-		skybox.setLocalTranslation(camTranslation);
-	}
-	
-	private void player1Update(float elapsedTimeMS){
-		/* TODO Remove this once physics is working
-		for(int i = 0; i< cubeList.length; i++){
-			if((cubeList[i]).getWorldBound().intersects(player1.getWorldBound()) &&  cubeList[i].isAlive()){
-				p1Scored();
-				cubeList[i].setDead(false, player1Score);
-			}
-		}
-		
-		for(int i = 0; i< cubeList.length; i++){
-			if((cylinderList[i]).getWorldBound().intersects(player1.getWorldBound()) &&  cylinderList[i].isAlive()){
-				p1Scored();
-				cylinderList[i].setDead(false, player1Score);
-			}
-		}
-		
-		for(int i = 0; i< pyramidList.length; i++){
-			if((pyramidList[i]).getWorldBound().intersects(player1.getWorldBound()) &&  pyramidList[i].isAlive()){
-				p1Scored();
-				pyramidList[i].setDead(false, player1Score);
-			}
-		}
-		*/
 		physicsEngine.update(20.0f);
 		Matrix3D mat;
 		Vector3D translateVec;
 		for (SceneNode s : getGameWorld()){
+			
 			if (s.getPhysicsObject() != null){
-				System.out.println(s.getName());
-				mat = new Matrix3D(s.getPhysicsObject().getTransform());
-				translateVec = mat.getCol(3);
-				s.getLocalTranslation().setCol(3,translateVec);
+				if(s.getWorldBound().intersects(player1.getWorldBound()) && (s.getName().equals("src/Models/car.obj") || s.getName().equals("src/Models/truck.obj"))){
+					p1Scored();
+					
+					s.setLocalTranslation(new Matrix3D());
+					s.translate(0, 10, 0);
+				}
+				if(s.getName().equals(player1.getName())){
+					mat = s.getLocalTranslation();
+					translateVec = mat.getCol(3);
+					s.getLocalTranslation().setCol(3, translateVec);
+					
+				}else{
+					mat = new Matrix3D(s.getPhysicsObject().getTransform());
+					translateVec = mat.getCol(3);
+					s.getLocalTranslation().setCol(3,translateVec);
+				}
 			}
 		}
 		player1ScoreString.setText("Score = " + player1Score);
 		player1HPString.setText("HP: " + player1HP);
+		
+		Matrix3D camTranslation = new Matrix3D();
+		camTranslation.translate(camera1.getLocation().getX(), camera1.getLocation().getY(), camera1.getLocation().getZ());
+		skybox.setLocalTranslation(camTranslation);
 	}
 		
 	private void p1Scored(){
 		player1Score++;
-		spinController.spin();
+		//spinController.spin();
 	}
 	
 	protected void render(){
