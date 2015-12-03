@@ -12,11 +12,9 @@ public class AvatarNear extends BTCondition{
 	private NPCcontroller npcc;
 	private Cube npc;
 	private TriMesh player;
-	private GemCollector game;
 	
-	public AvatarNear(GemCollector g, NPCcontroller c, Cube n, boolean toNegate){
+	public AvatarNear(NPCcontroller c, Cube n, boolean toNegate){
 		super(toNegate);
-		game = g;
 		npcc = c;
 		npc = n;
 	}

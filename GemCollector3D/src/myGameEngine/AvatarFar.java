@@ -11,11 +11,9 @@ public class AvatarFar extends BTCondition{
 	private NPCcontroller npcc;
 	private Cube npc;
 	private TriMesh player;
-	private GemCollector game;
 	
-	public AvatarFar(GemCollector g, NPCcontroller c, Cube n, boolean toNegate){
+	public AvatarFar(NPCcontroller c, Cube n, boolean toNegate){
 		super(toNegate);
-		game = g;
 		npcc = c;
 		npc = n;
 	}

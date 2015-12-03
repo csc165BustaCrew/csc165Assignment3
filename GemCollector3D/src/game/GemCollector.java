@@ -393,7 +393,7 @@ public class GemCollector extends BaseGame {
 			pyramidList[i] = otherPyramid;
 		}
 		npcMaster = new NPCcontroller();
-		npcMaster.startNPControl(this);
+		npcMaster.startNPControl();
 		
 		//MyTranslateController transController = new MyTranslateController();
 		//spinController = new MySpinController();
