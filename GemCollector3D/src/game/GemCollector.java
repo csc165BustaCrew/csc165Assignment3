@@ -143,6 +143,9 @@ public class GemCollector extends BaseGame {
 	
 	private OBJLoader objLoader = new OBJLoader();
 	
+	//TODO Add these values to script
+	float ballMass = 1.0f;
+	float up[] = {0,1,0};
 	
 	public GemCollector(String serverAddr, int serverPort){
 		super();
@@ -151,9 +154,9 @@ public class GemCollector extends BaseGame {
 		this.serverProtocol = ProtocolType.TCP;
 	}
 	
-	//TODO Add these values to script
-	float ballMass = 1.0f;
-	float up[] = {0,1,0};
+	public TriMesh getAvatar(){
+		return player1;
+	}
 	
 	
 	public void initGame(){
@@ -390,7 +393,7 @@ public class GemCollector extends BaseGame {
 			pyramidList[i] = otherPyramid;
 		}
 		npcMaster = new NPCcontroller();
-		npcMaster.startNPControl(player1);
+		npcMaster.startNPControl(this);
 		
 		//MyTranslateController transController = new MyTranslateController();
 		//spinController = new MySpinController();
@@ -432,20 +435,20 @@ public class GemCollector extends BaseGame {
 			System.out.println("Audio Manager failed to initialize!");
 			return;
 		 }
-		 resource1 = audioMgr.createAudioResource(,AudioResourceType.AUDIO_SAMPLE);
+		 //resource1 = audioMgr.createAudioResource(,AudioResourceType.AUDIO_SAMPLE);
 
-		 musicSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
-		 musicSound.initialize(audioMgr);
+		 //musicSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
+		 //musicSound.initialize(audioMgr);
 		 
-		 musicSound.setMaxDistance(50.0f);
-		 musicSound.setMinDistance(3.0f);
-		 musicSound.setRollOff(5.0f);
-		 musicSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
+		 //musicSound.setMaxDistance(50.0f);
+		 //musicSound.setMinDistance(3.0f);
+		 //musicSound.setRollOff(5.0f);
+		 //musicSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
 
-		 setEarParameters();
+		 //setEarParameters();
 		 //audioMgr.setMasterVolume(100);
-		 System.out.println(audioMgr.getMasterVolume());
-		 musicSound.play();
+		 //System.out.println(audioMgr.getMasterVolume());
+		 //musicSound.play();
 	}
 	public void setEarParameters(){
 		Matrix3D avDir = (Matrix3D) (player1.getWorldRotation().clone());
@@ -516,6 +519,7 @@ public class GemCollector extends BaseGame {
 			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
+		npcMaster.npcLoop(player1);
 		physicsEngine.update(20.0f);
 		Matrix3D mat;
 		Vector3D translateVec;

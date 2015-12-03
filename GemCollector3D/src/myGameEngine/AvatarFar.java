@@ -1,5 +1,6 @@
 package myGameEngine;
 
+import game.GemCollector;
 import graphicslib3D.Point3D;
 import graphicslib3D.Vector3D;
 import sage.ai.behaviortrees.BTCondition;
@@ -10,10 +11,11 @@ public class AvatarFar extends BTCondition{
 	private NPCcontroller npcc;
 	private Cube npc;
 	private TriMesh player;
+	private GemCollector game;
 	
-	public AvatarFar(TriMesh p, NPCcontroller c, Cube n, boolean toNegate){
+	public AvatarFar(GemCollector g, NPCcontroller c, Cube n, boolean toNegate){
 		super(toNegate);
-		player = p;
+		game = g;
 		npcc = c;
 		npc = n;
 	}
