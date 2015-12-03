@@ -1,7 +1,12 @@
+/Models/
+/NetworkingServer.class
+/Starter.class
+/Textures/
 /bullet/
 /events/
 /game/
 /gameObjects/
 /inputActions/
+/jscripts/
 /myGameEngine/
 /networking/

@@ -146,5 +146,8 @@ public class Camera3PMouseKeyboard {
 		}
 		
 	}
+	public float getAzimuth(){
+		return cameraAzimuth;
+	}
 	
 }

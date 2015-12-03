@@ -53,6 +53,7 @@ import myGameEngine.MyDisplaySystem;
 import myGameEngine.MySpinController;
 import myGameEngine.MyTranslateController;
 import myGameEngine.MyTerrain;
+import myGameEngine.NPCcontroller;
 import sage.display.IDisplaySystem;
 import sage.event.EventManager;
 import sage.event.IEventManager;
@@ -73,6 +74,9 @@ import sage.camera.ICamera;
 import sage.camera.JOGLCamera;
 import net.java.games.input.Component.Identifier;
 import networking.GameClient;
+import sage.audio.*;
+
+import com.jogamp.openal.ALFactory;
 
 public class GemCollector extends BaseGame {
 	private final INPUT_ACTION_TYPE ON_PRESS_ONLY = IInputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY;
@@ -118,10 +122,15 @@ public class GemCollector extends BaseGame {
 	private IEventManager eventMgr;
 	private IRenderer renderer;
 	
+	public IAudioManager audioMgr;
+	public Sound musicSound;
+	public AudioResource resource1;
+	
 	private Group group1;
 	private Group group2;
 	
 	private MySpinController spinController;
+	private NPCcontroller npcMaster;
 	
 	private GameClient gameClient;
 	private String serverAddr;
@@ -175,6 +184,7 @@ public class GemCollector extends BaseGame {
 			initScript();
 			initInput();
 			initEvents();
+			initAudio();
 		}else{
 			initPhysics();
 			initSkyBox();
@@ -184,6 +194,7 @@ public class GemCollector extends BaseGame {
 			initWorldAxis();
 			initInput();
 			initEvents();
+			initAudio();
 		}
 		//HUD
 		player1ScoreString = new HUDString("Score= " + player1Score);
@@ -378,6 +389,8 @@ public class GemCollector extends BaseGame {
 			//group2.addChild(otherPyramid);
 			pyramidList[i] = otherPyramid;
 		}
+		npcMaster = new NPCcontroller();
+		npcMaster.startNPControl(player1);
 		
 		//MyTranslateController transController = new MyTranslateController();
 		//spinController = new MySpinController();
@@ -410,6 +423,38 @@ public class GemCollector extends BaseGame {
 		addGameWorldObject(xAxis);
 		addGameWorldObject(yAxis);
 		addGameWorldObject(zAxis);
+	}
+	
+	public void initAudio(){
+		
+		audioMgr = AudioManagerFactory.createAudioManager("sage.audio.joal.JOALAudioManager");
+		if(!audioMgr.initialize()){
+			System.out.println("Audio Manager failed to initialize!");
+			return;
+		 }
+		 resource1 = audioMgr.createAudioResource(,AudioResourceType.AUDIO_SAMPLE);
+
+		 musicSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
+		 musicSound.initialize(audioMgr);
+		 
+		 musicSound.setMaxDistance(50.0f);
+		 musicSound.setMinDistance(3.0f);
+		 musicSound.setRollOff(5.0f);
+		 musicSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
+
+		 setEarParameters();
+		 //audioMgr.setMasterVolume(100);
+		 System.out.println(audioMgr.getMasterVolume());
+		 musicSound.play();
+	}
+	public void setEarParameters(){
+		Matrix3D avDir = (Matrix3D) (player1.getWorldRotation().clone());
+		 float camAz = cam1Controller.getAzimuth();
+		 avDir.rotateY(180.0f-camAz);
+		 Vector3D camDir = new Vector3D(0,0,1);
+		 camDir = camDir.mult(avDir);
+		 audioMgr.getEar().setLocation(camera1.getLocation());
+		 audioMgr.getEar().setOrientation(camDir, new Vector3D(0,1,0));
 	}
 	
 	//Initializes controls
@@ -515,6 +560,9 @@ public class GemCollector extends BaseGame {
 	
 	protected void shutdown(){
 		super.shutdown();
+		musicSound.release(audioMgr);
+		resource1.unload();
+		audioMgr.shutdown();
 		if(gameClient != null){
 			gameClient.sendByeMessage();
 			try{
