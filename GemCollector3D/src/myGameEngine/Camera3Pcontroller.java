@@ -33,7 +33,7 @@ public class Camera3Pcontroller {
 		this.target = target;
 		worldUpVec = new Vector3D(0, 1, 0);
 		cameraDistanceFromTarget = 10.0f;
-		cameraAzimuth = 180;
+		cameraAzimuth = 360;
 		cameraElevation = 20.0f;
 		defaultCameraElevation = cameraElevation;
 		update(0.0f);
@@ -99,11 +99,11 @@ public class Camera3Pcontroller {
 		public void performAction(float time, Event event) {
 			float rotAmount;
 			if(event.getValue() < -0.2){
-				rotAmount = -0.2f;
+				rotAmount = -0.65f;
 			}
 			else{
 				if(event.getValue() > 0.2){
-					rotAmount = 0.2f;
+					rotAmount = 0.65f;
 				}
 				else{
 					rotAmount = 0.0f;
@@ -147,6 +147,10 @@ public class Camera3Pcontroller {
 			}
 		}
 		
+	}
+	
+	public float getAzimuth(){
+		return cameraAzimuth;
 	}
 	
 }
