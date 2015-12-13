@@ -65,6 +65,10 @@ public class GameClient extends GameConnectionClient{
 			UUID ghostID = UUID.fromString(msgTokens[1]);
 			sendDetails(ghostID);
 		}
+		
+		if(msgTokens[0].compareTo("lost") == 0){
+			game.setGameOver(true);
+		}
 }
 
 	private void sendDetails(UUID ghostID){
@@ -76,11 +80,20 @@ public class GameClient extends GameConnectionClient{
 			e.printStackTrace();
 		}
 	}
+	
 	public void sendJoinMessage(){
 		try{
 			sendPacket(new String("join," + id.toString()));
 		} catch (IOException e) {
 			e.printStackTrace(); 
+		}
+	}
+	
+	public void sendWonMessage(){
+		try{
+			sendPacket(new String("won," + id.toString()));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	

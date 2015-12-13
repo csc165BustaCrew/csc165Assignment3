@@ -20,12 +20,14 @@ public class StrafeLeftAction extends AbstractInputAction{
 
 	@Override
 	public void performAction(float time, Event e) {
-		Matrix3D rot = avatar.getLocalRotation();
-		Vector3D dir = new Vector3D(1,0,0);
-		dir = dir.mult(rot);
-		dir.scale((double)speed*time);
-		avatar.translate((float)dir.getX(), (float)dir.getY(), (float)dir.getZ());
-		updateVerticalPosition();
+		if(!(avatar.getLocalTranslation().getCol(3).getZ() <= .35f)){
+			Matrix3D rot = avatar.getLocalRotation();
+			Vector3D dir = new Vector3D(1,0,0);
+			dir = dir.mult(rot);
+			dir.scale((double)speed*time);
+			avatar.translate((float)dir.getX(), (float)dir.getY(), (float)dir.getZ());
+			updateVerticalPosition();
+		}
 	}
 	
 	private void updateVerticalPosition(){

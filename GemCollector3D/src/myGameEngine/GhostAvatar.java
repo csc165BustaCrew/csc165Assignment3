@@ -27,4 +27,5 @@ public class GhostAvatar {
 	public SceneNode getGhost(){
 		return avatar;
 	}
+	
 }

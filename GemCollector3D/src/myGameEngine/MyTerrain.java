@@ -22,7 +22,7 @@ public class MyTerrain {
 		TerrainBlock imageTerrain = createTerBlock(myHeightMap);
 
 		TextureState roadState;
-		Texture roadTexture = TextureManager.loadTexture2D("src/Textures/Ground/road_road_0024_01_s.jpg");
+		Texture roadTexture = TextureManager.loadTexture2D("src/Textures/Ground/road.jpg");
 		roadTexture.setApplyMode(sage.texture.Texture.ApplyMode.Replace);
 		roadState = (TextureState) display.getRenderer().createRenderState(RenderStateType.Texture);
 		

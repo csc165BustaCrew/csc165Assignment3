@@ -60,6 +60,12 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 			UUID clientID = UUID.fromString(msgTokens[2]);
 			sendDetailsFor(remoteID, clientID, msgTokens[3]);
 		}
+		
+		if(msgTokens[0].compareTo("won") == 0){
+			UUID clientID = UUID.fromString(msgTokens[1]);
+			sendWinner(clientID);
+		}
+		
 	}
 	
 	private void sendDetailsFor(UUID remoteID, UUID clientID, String details){
@@ -83,6 +89,15 @@ public class GameServerTCP extends GameConnectionServer<UUID>{
 	private void sendByeMessages(UUID clientID) {
 		try{
 			String msg = "bye," + clientID.toString();
+			forwardPacketToAll(msg, clientID);
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+	}
+	
+	private void sendWinner(UUID clientID){
+		try{
+			String msg = "lost, ";
 			forwardPacketToAll(msg, clientID);
 		} catch (IOException e){
 			e.printStackTrace();

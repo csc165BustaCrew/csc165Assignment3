@@ -27,6 +27,7 @@ import sage.input.*;
 import sage.input.IInputManager.INPUT_ACTION_TYPE;
 import sage.input.action.IAction;
 import sage.model.loader.OBJLoader;
+import sage.model.loader.ogreXML.OgreXMLParser;
 import sage.networking.IGameConnection.ProtocolType;
 import sage.physics.IPhysicsEngine;
 import sage.physics.IPhysicsObject;
@@ -42,11 +43,12 @@ import inputActions.MoveOnYAxisAction;
 import inputActions.PitchNegAction;
 import inputActions.PitchPosAction;
 import inputActions.QuitGameAction;
+import inputActions.StopAnimation;
 import inputActions.StrafeLeftAction;
 import inputActions.StrafeRightAction;
 import inputActions.YawNegAction;
 import inputActions.YawPosAction;
-import myGameEngine.Camera3Pcontroller;
+import myGameEngine.Camera3PController;
 import myGameEngine.Camera3PMouseKeyboard;
 import myGameEngine.MyDisplaySystem;
 import myGameEngine.MySpinController;
@@ -59,11 +61,14 @@ import sage.event.IEventManager;
 import sage.scene.shape.Cube;
 import sage.scene.shape.Line;
 import sage.scene.shape.Pyramid;
+import sage.scene.state.RenderState;
+import sage.scene.state.TextureState;
 import sage.terrain.TerrainBlock;
 import sage.texture.Texture;
 import sage.texture.TextureManager;
 import sage.scene.Group;
 import sage.scene.HUDString;
+import sage.scene.Model3DTriMesh;
 import sage.scene.SceneNode;
 import sage.scene.SceneNode.CULL_MODE;
 import sage.scene.SkyBox;
@@ -74,6 +79,7 @@ import sage.camera.JOGLCamera;
 import net.java.games.input.Component.Identifier;
 import networking.GameClient;
 import sage.audio.*;
+import java.io.File;
 
 import com.jogamp.openal.ALFactory;
 
@@ -83,7 +89,9 @@ public class GemCollector extends BaseGame {
 
 	private boolean gameOver = false;
 	private boolean player1Won = false;
-
+	private boolean playerHit = false;
+	private float playerScale = .35f;
+	private Matrix3D playerInitM;
 	private int player1Score = 0;
 	private int player1HP = 3;
 
@@ -114,10 +122,11 @@ public class GemCollector extends BaseGame {
 	private TriMesh cylinderList[] = new TriMesh[5];
 	private MyPyramid pyramidList[] = new MyPyramid[5];
 
-	private TriMesh player1;
+	//private TriMesh player1;
 	private IDisplaySystem display;
 	private ICamera camera1;
 	private Camera3PMouseKeyboard cam1Controller;
+	private Camera3PController cam1GPController;
 	private IEventManager eventMgr;
 	private IRenderer renderer;
 
@@ -142,6 +151,12 @@ public class GemCollector extends BaseGame {
 
 	private OBJLoader objLoader = new OBJLoader();
 
+	private TextureState chickenTextureState;
+	private Group model;
+	private Model3DTriMesh player1;
+	
+	private boolean isGPOn;
+	
 	// TODO Add these values to script
 	float ballMass = 1.0f;
 	float up[] = { 0, 1, 0 };
@@ -151,6 +166,10 @@ public class GemCollector extends BaseGame {
 		this.serverAddr = serverAddr;
 		this.serverPort = serverPort;
 		this.serverProtocol = ProtocolType.TCP;
+	}
+	
+	public GemCollector(String serverAddr, int serverPort, String fsem, int playerColor){
+		
 	}
 
 	public TriMesh getAvatar() {
@@ -169,6 +188,7 @@ public class GemCollector extends BaseGame {
 		if (gameClient != null) {
 			gameClient.sendJoinMessage();
 		}
+		
 		display = getDisplaySystem();
 		eventMgr = EventManager.getInstance();
 
@@ -205,6 +225,10 @@ public class GemCollector extends BaseGame {
 
 		player1HPString = new HUDString("HP: " + player1HP);
 		camera1.addToHUD(player1HPString);
+		
+		player1GameOverString = new HUDString("");
+		player1GameOverString.setLocation(.5, .5);
+		camera1.addToHUD(player1GameOverString);		
 	}
 
 	private void initScript() {
@@ -278,17 +302,37 @@ public class GemCollector extends BaseGame {
 	}
 
 	private void initPlayers() {
-		player1 = objLoader.loadModel("src/Models/chicken.obj");
-		player1.updateLocalBound();
-		// player1.rotate(180, new Vector3D(0,1,0));
-		player1.translate(30, 15, 30);
-		player1.setWorldTranslation(player1.getLocalTranslation());
-		// player1.updateGeometricState(1.0f, true);
+		File file = new File(File.pathSeparator);
+		System.out.println(file.getAbsolutePath());
+		
+		OgreXMLParser loader = new OgreXMLParser();
+		try {
+			model = loader.loadModel("src/animated_objects/Cube.mesh.xml", "src/animated_objects/chicken.material", "src/animated_objects/Cube.skeleton.xml");
+			model.updateGeometricState(0, true);
+			java.util.Iterator<SceneNode> modelIterator = model.iterator();
+			player1 = (Model3DTriMesh) modelIterator.next();
+		} catch(Exception e){
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		Texture chickenTexture = TextureManager.loadTexture2D( "src/animated_objects/green_chicken.jpg");
+		chickenTexture.setApplyMode(sage.texture.Texture.ApplyMode.Replace);
+		chickenTextureState = (TextureState)display.getRenderer().createRenderState(RenderState.RenderStateType.Texture);
+		chickenTextureState.setTexture(chickenTexture, 0);
+		chickenTextureState.setEnabled(true);
+		player1.setRenderState(chickenTextureState);
+		player1.updateRenderStates();
+		
 		player = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass,
-				player1.getWorldTransform().getValues(), 1.0f);
+		player1.getWorldTransform().getValues(), 1.0f);
 		player.setBounciness(0.0f);
 		player1.setPhysicsObject(player);
+		player1.scale(.35f, .35f, .35f);
 		addGameWorldObject(player1);
+		player1.translate(133f, 13f, 123f);
+		playerInitM = new Matrix3D();
+		playerInitM = (Matrix3D) player1.getLocalScale().clone();
 
 		camera1 = new JOGLCamera(renderer);
 		camera1.setPerspectiveFrustum(60, 1, 1, 1000);
@@ -296,7 +340,8 @@ public class GemCollector extends BaseGame {
 	}
 
 	public void initPlayerLocation(Vector3D loc) {
-		player1.translate((float) loc.getX(), (float) loc.getY(), (float) loc.getZ());
+//		player1.translate((float) loc.getX(), (float) loc.getY(), (float) loc.getZ());
+		player1.translate(133f, 13f, 123f);
 	}
 
 	private void initSkyBox() {
@@ -453,12 +498,20 @@ public class GemCollector extends BaseGame {
 		musicSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
 
 		setEarParameters();
-		musicSound.play();
+		//musicSound.play();
 	}
 
 	public void setEarParameters() {
 		Matrix3D avDir = (Matrix3D) (player1.getWorldRotation().clone());
-		float camAz = cam1Controller.getAzimuth();
+		float camAz;
+		
+		if(!isGPOn) {
+			camAz = cam1Controller.getAzimuth();
+		}
+		else {
+			camAz = cam1GPController.getAzimuth();
+		}
+		
 		avDir.rotateY(180.0f - camAz);
 		Vector3D camDir = new Vector3D(0, 0, 1);
 		camDir = camDir.mult(avDir);
@@ -494,19 +547,21 @@ public class GemCollector extends BaseGame {
 		im.associateAction(kbName, Identifier.Key.UP, pitchPosAction, REPEAT_WHILE_DOWN);
 		im.associateAction(kbName, Identifier.Key.DOWN, pitchNegAction, REPEAT_WHILE_DOWN);
 		im.associateAction(kbName, Identifier.Key.ESCAPE, quitGame, ON_PRESS_ONLY);
-
-		String mouseName = im.getMouseName();
-		cam1Controller = new Camera3PMouseKeyboard(camera1, player1, im, mouseName);
-
-		player1Bullet = new CubeBullet(this.getRenderer(), player1);
-		im.associateAction(kbName, Identifier.Key.F, player1Bullet, ON_PRESS_ONLY);
-		addGameWorldObject(player1Bullet.getBullet());
-
-		// player2Bullet = new CubeBullet(this.getRenderer(),
-		// cam2Controller.getCamera(), player2);
-		// im.associateAction(gpName, Identifier.Button._2, player2Bullet,
-		// ON_PRESS_ONLY);
-		// addGameWorldObject(player2Bullet.getBullet());
+		
+		if(gpName != null) {
+			MoveOnYAxisAction moveOnY = new MoveOnYAxisAction(player1, worldMap);
+			MoveOnXAxisAction moveOnX = new MoveOnXAxisAction(player1, worldMap);
+			im.associateAction(gpName, Identifier.Axis.Y, moveOnY, REPEAT_WHILE_DOWN);
+			im.associateAction(gpName, Identifier.Axis.X, moveOnX, REPEAT_WHILE_DOWN);
+			im.associateAction(gpName, Identifier.Button._1, quitGame, ON_PRESS_ONLY);
+			cam1GPController = new Camera3PController(camera1, player1, im, gpName);
+			isGPOn = true;
+		}
+		else {
+			String mouseName = im.getMouseName();
+			cam1Controller = new Camera3PMouseKeyboard(camera1, player1, im, mouseName);
+			isGPOn = false;
+		}
 
 	}
 
@@ -521,7 +576,13 @@ public class GemCollector extends BaseGame {
 
 	public void update(float elapsedTimeMS) {
 		super.update(elapsedTimeMS);
-		cam1Controller.update(elapsedTimeMS);
+		player1.updateAnimation(elapsedTimeMS);
+		if(!isGPOn){
+			cam1Controller.update(elapsedTimeMS);
+		}
+		else{
+			cam1GPController.update(elapsedTimeMS);
+		}
 
 		if (gameClient != null) {
 			gameClient.sendUpdate(getPlayerPosition());
@@ -531,12 +592,15 @@ public class GemCollector extends BaseGame {
 		physicsEngine.update(20.0f);
 		Matrix3D mat;
 		Vector3D translateVec;
+		
+		System.out.println(player1.getLocalTranslation().getCol(3).toString());
+		
 		for (SceneNode s : getGameWorld()) {
 
 			if (s.getPhysicsObject() != null) {
 				if (s.getWorldBound().intersects(player1.getWorldBound())
 						&& (s.getName().equals("src/Models/car.obj") || s.getName().equals("src/Models/truck.obj"))) {
-					p1Scored();
+					playerHit = true;
 
 					s.setLocalTranslation(new Matrix3D());
 					s.translate(0, 10, 0);
@@ -560,6 +624,30 @@ public class GemCollector extends BaseGame {
 		camTranslation.translate(camera1.getLocation().getX(), camera1.getLocation().getY(),
 				camera1.getLocation().getZ());
 		skybox.setLocalTranslation(camTranslation);
+		
+		if(playerHit){
+			playerScale -= .00000025f;
+			System.out.println(playerScale);
+			player1.scale(1f, playerScale, 1f);
+			if(playerScale <= .3499888f){
+				playerHit = false;
+				player1.translate(133f, 13f, 123f);
+				player1.setLocalScale(playerInitM);
+				player1.updateWorldBound();
+			}
+		}
+		
+		if(gameOver){
+			player1GameOverString.setText("LOOOOOOOSER!");
+		}
+		else if(!player1Won){
+			if(checkWin()){
+				gameClient.sendWonMessage();
+				player1Won = true;
+				player1GameOverString.setText("WINNER!");
+			}
+		}
+		
 	}
 
 	private void p1Scored() {
@@ -607,6 +695,19 @@ public class GemCollector extends BaseGame {
 		playerM.concatenate(player1.getLocalTranslation());
 		playerM.concatenate(player1.getLocalRotation());
 		return playerM;
+	}
+		
+	private boolean checkWin(){
+		if(player1.getLocalTranslation().getCol(3).getX() >= 365){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+		
+	public void setGameOver(boolean state){
+		gameOver = state;
 	}
 
 }
