@@ -439,8 +439,6 @@ public class GemCollector extends BaseGame {
 			// group2.addChild(otherPyramid);
 			pyramidList[i] = otherPyramid;
 		}
-		npcMaster = new NPCcontroller();
-		npcMaster.startNPControl();
 
 		// MyTranslateController transController = new MyTranslateController();
 		// spinController = new MySpinController();
@@ -588,7 +586,6 @@ public class GemCollector extends BaseGame {
 			gameClient.sendUpdate(getPlayerPosition());
 			gameClient.processPackets();
 		}
-		npcMaster.npcLoop(player1);
 		physicsEngine.update(20.0f);
 		Matrix3D mat;
 		Vector3D translateVec;

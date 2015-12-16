@@ -1,66 +1,82 @@
 package myGameEngine;
 
-import java.util.Random;
+import java.util.UUID;
 
-import game.GemCollector;
+import networking.GameServerTCP;
 import graphicslib3D.Matrix3D;
-import graphicslib3D.Point3D;
+import graphicslib3D.Vector3D;
 import sage.ai.behaviortrees.BTCompositeType;
 import sage.ai.behaviortrees.BTSequence;
 import sage.ai.behaviortrees.BehaviorTree;
-import sage.scene.TriMesh;
-import sage.scene.shape.Cube;
 
 public class NPCcontroller {
-	BehaviorTree bt = new BehaviorTree(BTCompositeType.SELECTOR);
+	BehaviorTree bt0 = new BehaviorTree(BTCompositeType.SELECTOR);
+	BehaviorTree bt1 = new BehaviorTree(BTCompositeType.SELECTOR);
+	BehaviorTree bt2 = new BehaviorTree(BTCompositeType.SELECTOR);
+	BehaviorTree bt3 = new BehaviorTree(BTCompositeType.SELECTOR);
+	BehaviorTree bt4 = new BehaviorTree(BTCompositeType.SELECTOR);
 	private long startTime;
 	private long lastUpdateTime;
-	private Cube npc;
-	private TriMesh player;
-	private boolean isLarge;
-
-	public void startNPControl() {
+	private NPC[] NPClist = new NPC[5];
+	private int numNPCs;
+	
+	public NPCcontroller(){
+		System.out.println("NPCcontroller constructor");
 		startTime = System.nanoTime();
 		lastUpdateTime = startTime;
-		setupNPC();
-		setupBehaviorTree();
 	}
-
-	public void setupNPC() {
-		npc = new Cube();
-		Random rand = new Random();
-		Matrix3D location = new Matrix3D();
-		location.translate(rand.nextInt(30) * 1, 30, rand.nextInt(30) * 1);
-		npc.setLocalTranslation(location);
-	}
-
-	public void npcLoop(TriMesh p) {
-		long frameStartTime = System.nanoTime();
-		float elapsedMilliSecs = (frameStartTime - lastUpdateTime) / (1000000.0f);
-		if (elapsedMilliSecs >= 50.0f) {
-			lastUpdateTime = frameStartTime;
-			bt.update(elapsedMilliSecs);
+	
+	public void updateNPCs(){
+		for(int i=0; i<numNPCs; i++){
+			NPClist[i].updateLocation();
 		}
 	}
 
-	public void setupBehaviorTree() {
-		bt.insertAtRoot(new BTSequence(10));
-		bt.insertAtRoot(new BTSequence(20));
-
-		// bt.insert(10, new AvatarNear(game, this, npc, false));
-		// bt.insert(10, new GetBuff(npc));
-		
-		bt.insert(10, new ThirtySeconds(this, npc, false));
-		bt.insert(10, new GetBuff(npc));
-		bt.insert(10, new SeventySeconds(this, npc, false));
-		bt.insert(10, new GetWeak(npc));
-
-		// bt.insert(20, new AvatarFar(game, this, npc, false));
-		// bt.insert(20, new GetWeak(npc));
-
+	public void setupNPC(){
+		System.out.println("setupNPC method");
+		NPClist[0] = new NPC(UUID.randomUUID(), 10, 1);
+		NPClist[1] = new NPC(UUID.randomUUID(), 10, 1);
+		NPClist[2] = new NPC(UUID.randomUUID(), 10, 1);
+		NPClist[3] = new NPC(UUID.randomUUID(), 10, 3);
+		NPClist[4] = new NPC(UUID.randomUUID(), 10, 3);
+		setupBehaviorTree(NPClist[0], bt0);
+		setupBehaviorTree(NPClist[1], bt1);
+		setupBehaviorTree(NPClist[2], bt2);
+		setupBehaviorTree(NPClist[3], bt3);
+		setupBehaviorTree(NPClist[4], bt4);
 	}
 
-	public boolean getNearFlag(Point3D npcP, Point3D playerP) {
+	public void npcLoop(GameServerTCP gameServer){
+		while(true){
+			long frameStartTime = System.nanoTime();
+			float elapMilSecs = (frameStartTime-lastUpdateTime)/(1000000.0f);
+			if(elapMilSecs >= 50.0f){
+				lastUpdateTime = frameStartTime;
+				updateNPCs();
+				bt0.update(elapMilSecs);
+				bt1.update(elapMilSecs);
+				bt2.update(elapMilSecs);
+				bt3.update(elapMilSecs);
+				bt4.update(elapMilSecs);
+				gameServer.sendNPCinfo();
+			}
+			//Thread.yield();
+		}
+	}
+
+	public void setupBehaviorTree(NPC npc, BehaviorTree bt) {
+		bt.insertAtRoot(new BTSequence(10));
+		bt.insertAtRoot(new BTSequence(20));
+		
+		bt.insert(10, new OnTerrain(this, npc, false));
+		bt.insert(10, new MoveForward(npc));
+		bt.insert(20, new OffTerrain(this, npc, false));
+		bt.insert(20, new MoveToSpawn(npc));
+		
+		System.out.println("finished behavior tree");
+	}
+
+	public boolean getNearFlag(Vector3D npcP, Vector3D playerP) {
 		if (playerP.getX() - npcP.getX() == 0) {
 			return true;
 		}
@@ -73,7 +89,7 @@ public class NPCcontroller {
 		return false;
 	}
 
-	public boolean getFarFlag(Point3D npcP, Point3D playerP) {
+	public boolean getFarFlag(Vector3D npcP, Vector3D playerP) {
 		if (playerP.getX() - npcP.getX() != 0) {
 			return true;
 		}
@@ -85,5 +101,18 @@ public class NPCcontroller {
 		}
 		return false;
 	}
-
+	
+	public int getNumOfNPCs() {
+		return 5;
+	}
+	
+	public Matrix3D getNPClocation(int i) {
+		return NPClist[i].getLocation();
+	}
+	public UUID getNPCUUID(int i){
+		return NPClist[i].getID();
+	}
+	public Matrix3D getNPCsize(int i){
+		return NPClist[i].getScale();
+	}
 }

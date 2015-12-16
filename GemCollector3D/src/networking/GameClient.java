@@ -9,18 +9,21 @@ import game.GemCollector;
 import graphicslib3D.Matrix3D;
 import graphicslib3D.Vector3D;
 import myGameEngine.GhostAvatar;
+import myGameEngine.GhostNPC;
 import sage.networking.client.GameConnectionClient;
 
 public class GameClient extends GameConnectionClient{
 	private GemCollector game;
 	private UUID id;
 	private Vector<GhostAvatar> ghostAvatars;
+	private Vector<GhostNPC> ghostNPCs;
 	
 	public GameClient(InetAddress remoteAddr, int remotePort, ProtocolType protocolType, GemCollector game) throws IOException {
 		super(remoteAddr, remotePort, protocolType);
 		this.game = game;
 		this.id = UUID.randomUUID();
-		this.ghostAvatars = new Vector<GhostAvatar>();		
+		this.ghostAvatars = new Vector<GhostAvatar>();	
+		this.ghostNPCs = new Vector<GhostNPC>();
 	}
 	
 	protected void processPacket(Object msg){
@@ -52,8 +55,15 @@ public class GameClient extends GameConnectionClient{
 		}
 		
 		if(msgTokens[0].compareTo("create") == 0){
+			System.out.println("Create command succesful?");
 			UUID ghostID = UUID.fromString(msgTokens[1]);
 			createGhostAvatar(ghostID, stringToMatrix(msgTokens[2]));
+		}
+		
+		if(msgTokens[0].compareTo("createGhostNPC") == 0){
+			System.out.println("Create command succesful?");
+			UUID ghostID = UUID.fromString(msgTokens[1]);
+			createGhostNPC(ghostID, stringToMatrix(msgTokens[2]));
 		}
 		
 		if(msgTokens[0].compareTo("updateGhost") == 0){
@@ -66,8 +76,9 @@ public class GameClient extends GameConnectionClient{
 			sendDetails(ghostID);
 		}
 		
-		if(msgTokens[0].compareTo("lost") == 0){
-			game.setGameOver(true);
+		if(msgTokens[0].compareTo("mnpc")==0){
+			UUID ghostID = UUID.fromString(msgTokens[1]);
+			updateGhostNPCS(ghostID, stringToMatrix(msgTokens[2]), stringToMatrix(msgTokens[3]));
 		}
 }
 
@@ -89,14 +100,6 @@ public class GameClient extends GameConnectionClient{
 		}
 	}
 	
-	public void sendWonMessage(){
-		try{
-			sendPacket(new String("won," + id.toString()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	public void sendUpdate(Matrix3D m){
 		try{
 			String update = "updateGhost," +id.toString() +"," + m.toString();
@@ -110,6 +113,14 @@ public class GameClient extends GameConnectionClient{
 		for(GhostAvatar g: ghostAvatars){
 			if(g.getID().equals(ghostID)){
 				g.update(m);
+			}
+		}
+	}
+	
+	private void updateGhostNPCS(UUID ghostID, Matrix3D m, Matrix3D scale){
+		for(GhostNPC g: ghostNPCs){
+			if(g.getID().equals(ghostID)){
+				g.update(m, scale);
 			}
 		}
 	}
@@ -132,6 +143,13 @@ public class GameClient extends GameConnectionClient{
 		GhostAvatar ghost = new GhostAvatar(ghostM, ghostID);
 		game.addGhost(ghost.getGhost());
 		ghostAvatars.add(ghost);
+		System.out.println("yes");
+	}
+	
+	private void createGhostNPC(UUID ghostID, Matrix3D ghostM){
+		GhostNPC ghost = new GhostNPC(ghostM, ghostID);
+		game.addGhost(ghost.getGhost());
+		ghostNPCs.addElement(ghost);
 	}
 
 	private void removeGhostAvatar(UUID ghostID) {
@@ -147,6 +165,14 @@ public class GameClient extends GameConnectionClient{
 			String message = new String("create," + id.toString());
 			message += "," + m.toString();
 			sendPacket(message);
+		} catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	
+	public void askForNPCinfo(){
+		try{
+			sendPacket(new String("needNPC," + id.toString()));
 		} catch(IOException e){
 			e.printStackTrace();
 		}
