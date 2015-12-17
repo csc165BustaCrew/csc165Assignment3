@@ -12,7 +12,7 @@ public class MoveToSpawn extends BTAction{
 	@Override
 	protected BTStatus update(float arg0) {
 		npc.moveToSpawn();
-		System.out.println("move to start action");
+//		System.out.println("move to start action");
 		return BTStatus.BH_SUCCESS;
 	}
 }

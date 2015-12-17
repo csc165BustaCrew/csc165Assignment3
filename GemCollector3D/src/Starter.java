@@ -11,7 +11,7 @@ public class Starter {
 //		int port = reader.nextInt();
 //		System.out.println("Do you want to play in full screen mode? y/n ");
 //		String fsem = reader.nextLine();
-//		System.out.println("Which color would you like to be?\n 1)white\n2)blue\n3)green\n ");
+//		System.out.println("Which color would you like to be?\n 1)white\n2)blue\n3)green\n4)purple ");
 //		int color = reader.nextInt();
 		//new GemCollector(ip, port, fsem, color).start();
 		new GemCollector("127.0.0.1", 502).start();

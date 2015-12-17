@@ -76,7 +76,7 @@ public class NPC {
 	}
 	public void moveToSpawn() {
 		Matrix3D npcMove = npc.getLocalTranslation();
-		npcMove.translate(0,0, -100);
+		npcMove.translate(0,0, -300);
 		npc.setLocalTranslation(npcMove);
 	}
 	public void moveForward() {

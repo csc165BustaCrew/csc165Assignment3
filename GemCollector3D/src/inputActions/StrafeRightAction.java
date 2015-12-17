@@ -11,7 +11,7 @@ import sage.terrain.TerrainBlock;
 public class StrafeRightAction extends AbstractInputAction{
 	private TerrainBlock terrain;
 	private SceneNode avatar;
-	private float speed = 0.01f;
+	private float speed = 0.05f;
 	
 	public StrafeRightAction(SceneNode avatar, TerrainBlock ter){
 		this.terrain = ter;

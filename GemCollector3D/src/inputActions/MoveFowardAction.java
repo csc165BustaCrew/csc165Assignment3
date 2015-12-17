@@ -17,7 +17,7 @@ public class MoveFowardAction extends AbstractInputAction {
 	private Model3DTriMesh avatar;
 //	private SceneNode avatar;
 	private TerrainBlock terrain;
-	private float speed = -0.01f;
+	private float speed = -0.05f;
 	public MoveFowardAction(Model3DTriMesh avatar, TerrainBlock ter){
 		this.avatar = avatar;
 		this.terrain = ter;

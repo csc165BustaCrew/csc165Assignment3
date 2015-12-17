@@ -21,7 +21,7 @@ public class NPCcontroller {
 	private int numNPCs;
 	
 	public NPCcontroller(){
-		System.out.println("NPCcontroller constructor");
+//		System.out.println("NPCcontroller constructor");
 		startTime = System.nanoTime();
 		lastUpdateTime = startTime;
 	}

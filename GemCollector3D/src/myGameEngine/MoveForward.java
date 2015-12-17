@@ -12,7 +12,7 @@ public class MoveForward extends BTAction{
 	@Override
 	protected BTStatus update(float arg0) {
 		npc.moveForward();
-		System.out.println("move forward action");
+//		System.out.println("move forward action");
 		return BTStatus.BH_SUCCESS;
 	}
 }

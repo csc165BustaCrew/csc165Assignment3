@@ -12,7 +12,7 @@ import sage.terrain.TerrainBlock;
 
 public class MoveOnXAxisAction extends AbstractInputAction{
 	private Model3DTriMesh avatar;
-	private float speed = -0.01f;
+	private float speed = -0.05f;
 	private TerrainBlock terrain;
 	
 	public MoveOnXAxisAction(Model3DTriMesh avatar, TerrainBlock ter){

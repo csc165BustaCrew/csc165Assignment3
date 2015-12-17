@@ -184,4 +184,13 @@ public class GameClient extends GameConnectionClient{
 		} catch (IOException e) { e.printStackTrace(); }
 		
 	}
+
+	public void sendWonMessage() {
+		try{
+			sendPacket(new String("won," + id.toString()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 }

@@ -68,6 +68,10 @@ public class GameServerTCP extends GameConnectionServer<UUID> {
 			sendDetailsFor(remoteID, clientID, msgTokens[3]);
 		}
 		
+		if(msgTokens[0].compareTo("won") == 0){
+			UUID clientID = UUID.fromString(msgTokens[1]);
+			sendWinner(clientID);
+		}
 	}
 
 	private void sendDetailsFor(UUID remoteID, UUID clientID, String details) {
@@ -97,6 +101,15 @@ public class GameServerTCP extends GameConnectionServer<UUID> {
 		}
 	}
 
+	private void sendWinner(UUID clientID){
+		try{
+			String msg = "lost, ";
+			forwardPacketToAll(msg, clientID);
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+	}
+	
 	public void updatePlayers(UUID clientID, String loc) {
 		try {
 			String msg = "updateGhost," + clientID.toString() + ",";
@@ -110,18 +123,18 @@ public class GameServerTCP extends GameConnectionServer<UUID> {
 	public void sendInitLocation(UUID clientID) {
 		try {
 			String pos = "startPos,";
-			switch (clientCount) {
+			switch(clientCount){
 			case 0:
-				pos += "0,0,-10";
+				pos += "133,13,124";
 				break;
 			case 1:
-				pos += "0,0,10";
+				pos += "133,13,134";
 				break;
 			case 2:
-				pos += "-10,0,0";
+				pos += "133,13,144";
 				break;
 			case 3:
-				pos += "10,0,0";
+				pos += "133,13,154";
 			}
 
 			sendPacket(pos, clientID);

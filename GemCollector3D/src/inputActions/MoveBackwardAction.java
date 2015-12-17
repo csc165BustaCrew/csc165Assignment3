@@ -13,7 +13,7 @@ public class MoveBackwardAction extends AbstractInputAction{
 	//private IPhysicsObject player;
 	private TerrainBlock terrain;
 	private SceneNode avatar;
-	float speed = 0.01f;
+	float speed = 0.05f;
 
 	public MoveBackwardAction(SceneNode avatar, TerrainBlock ter){
 		//this.player = obj;

@@ -19,13 +19,13 @@ public class OnTerrain extends BTCondition{
 	@Override
 	protected boolean check() {
 		if(npc.getDirection() == 1){ 
-			if (npc.getLocation().getCol(3).getZ() <= (npc.getSpawnValue() + 100)) {
+			if (npc.getLocation().getCol(3).getZ() <= (npc.getSpawnValue() + 300)) {
 				return true;
 			} else {
 				return false;
 			}
 		}else{
-			if(npc.getLocation().getCol(3).getZ() >= (npc.getSpawnValue() + 100)){
+			if(npc.getLocation().getCol(3).getZ() >= (npc.getSpawnValue() + 300)){
 				return true;
 			}else{
 				return false;

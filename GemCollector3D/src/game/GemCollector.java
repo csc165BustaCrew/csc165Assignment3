@@ -48,8 +48,8 @@ import inputActions.StrafeLeftAction;
 import inputActions.StrafeRightAction;
 import inputActions.YawNegAction;
 import inputActions.YawPosAction;
-import myGameEngine.Camera3PController;
 import myGameEngine.Camera3PMouseKeyboard;
+import myGameEngine.Camera3Pcontroller;
 import myGameEngine.MyDisplaySystem;
 import myGameEngine.MySpinController;
 import myGameEngine.MyTranslateController;
@@ -116,6 +116,8 @@ public class GemCollector extends BaseGame {
 	private IPhysicsObject truckPArray[] = new IPhysicsObject[5];
 	private IPhysicsObject carP;
 	private IPhysicsObject carPArray[] = new IPhysicsObject[5];
+	private IPhysicsObject npcPhys[] = new IPhysicsObject[25];
+	private int npcCount = 0;
 
 	private Arrow arrow;
 	private TriMesh cubeList[] = new TriMesh[5];
@@ -126,12 +128,12 @@ public class GemCollector extends BaseGame {
 	private IDisplaySystem display;
 	private ICamera camera1;
 	private Camera3PMouseKeyboard cam1Controller;
-	private Camera3PController cam1GPController;
+	private Camera3Pcontroller cam1GPController;
 	private IEventManager eventMgr;
 	private IRenderer renderer;
 
 	public IAudioManager audioMgr;
-	public Sound musicSound;
+	public Sound backgroundMusic, splatSound;
 	public AudioResource resource1;
 
 	private Group group1;
@@ -156,6 +158,8 @@ public class GemCollector extends BaseGame {
 	private Model3DTriMesh player1;
 	
 	private boolean isGPOn;
+	private String playerModel;
+	private boolean isFsemOn = false;
 	
 	// TODO Add these values to script
 	float ballMass = 1.0f;
@@ -166,10 +170,34 @@ public class GemCollector extends BaseGame {
 		this.serverAddr = serverAddr;
 		this.serverPort = serverPort;
 		this.serverProtocol = ProtocolType.TCP;
+		playerModel = "green_chicken";
 	}
 	
-	public GemCollector(String serverAddr, int serverPort, String fsem, int playerColor){
+	public GemCollector(String serverAddr, int serverPort, boolean fsem, int playerColor){
+		super();
+		this.serverAddr = serverAddr;
+		this.serverPort = serverPort;
+		this.serverProtocol = ProtocolType.TCP;
 		
+		isFsemOn = fsem;
+		
+		switch(playerColor){
+			case 1: 
+				playerModel = "white_chicken";
+				break;
+			case 2: 
+				playerModel = "blue_chicken";
+				break;
+			case 3:
+				playerModel = "green_chicken";
+				break;
+			case 4:
+				playerModel = "purple_chicken";
+				break;
+			default: 
+				playerModel = "white_chicken";
+				break;
+		}
 	}
 
 	public TriMesh getAvatar() {
@@ -324,15 +352,16 @@ public class GemCollector extends BaseGame {
 		player1.setRenderState(chickenTextureState);
 		player1.updateRenderStates();
 		
-		player = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass,
-		player1.getWorldTransform().getValues(), 1.0f);
+		player = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, player1.getWorldTransform().getValues(), 1.0f);
 		player.setBounciness(0.0f);
 		player1.setPhysicsObject(player);
 		player1.scale(.35f, .35f, .35f);
 		addGameWorldObject(player1);
-		player1.translate(133f, 13f, 123f);
+		//player1.translate(133f, 13f, 123f);
 		playerInitM = new Matrix3D();
-		playerInitM = (Matrix3D) player1.getLocalScale().clone();
+		playerInitM.concatenate((Matrix3D)player1.getLocalTranslation().clone()); 
+		playerInitM.concatenate((Matrix3D)player1.getLocalRotation().clone());
+		playerInitM.concatenate((Matrix3D)player1.getLocalScale().clone());
 
 		camera1 = new JOGLCamera(renderer);
 		camera1.setPerspectiveFrustum(60, 1, 1, 1000);
@@ -340,8 +369,8 @@ public class GemCollector extends BaseGame {
 	}
 
 	public void initPlayerLocation(Vector3D loc) {
-//		player1.translate((float) loc.getX(), (float) loc.getY(), (float) loc.getZ());
-		player1.translate(133f, 13f, 123f);
+		player1.translate((float) loc.getX(), (float) loc.getY(), (float) loc.getZ());
+//		player1.translate(133f, 13f, 123f);
 	}
 
 	private void initSkyBox() {
@@ -474,29 +503,38 @@ public class GemCollector extends BaseGame {
 	}
 
 	public void initAudio() {
-
 		audioMgr = AudioManagerFactory.createAudioManager("sage.audio.joal.JOALAudioManager");
 		if (!audioMgr.initialize()) {
 			System.out.println("Audio Manager failed to initialize!");
 			return;
 		}
-		resource1 = audioMgr.createAudioResource("src/14390__matvey__nice-quack.wav", AudioResourceType.AUDIO_SAMPLE);
+		resource1 = audioMgr.createAudioResource("src/sounds/Kai_Engel_-_07_-_February.wav", AudioResourceType.AUDIO_SAMPLE);
 		// resource1 = audioMgr.createAudioResource("src/12345.wav",
 		// AudioResourceType.AUDIO_SAMPLE);
 		// System.out.println(resource1.getIsLoaded());
 		// System.out.println(resource1.getAudioFormat());
 		// System.out.println(resource1.getFileName());
 		// System.out.println(resource1.getAudioType());
-		musicSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
-		musicSound.initialize(audioMgr);
-		//System.out.println(resource1.getIsLoaded());
-		musicSound.setMaxDistance(50.0f);
-		musicSound.setMinDistance(3.0f);
-		musicSound.setRollOff(5.0f);
-		musicSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
+		backgroundMusic = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
+		backgroundMusic.initialize(audioMgr);
+
+		backgroundMusic.setMaxDistance(50.0f);
+		backgroundMusic.setMinDistance(3.0f);
+		backgroundMusic.setRollOff(5.0f);
+		backgroundMusic.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
 
 		setEarParameters();
 		//musicSound.play();
+		backgroundMusic.play();
+		
+		resource1 = audioMgr.createAudioResource("src/sounds/Splat-SoundBible.wav", AudioResourceType.AUDIO_SAMPLE);
+		splatSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
+		splatSound.initialize(audioMgr);
+
+		splatSound.setMaxDistance(50.0f);
+		splatSound.setMinDistance(3.0f);
+		splatSound.setRollOff(5.0f);
+		splatSound.setLocation(new Point3D(player1.getWorldTranslation().getCol(3)));
 	}
 
 	public void setEarParameters() {
@@ -552,7 +590,7 @@ public class GemCollector extends BaseGame {
 			im.associateAction(gpName, Identifier.Axis.Y, moveOnY, REPEAT_WHILE_DOWN);
 			im.associateAction(gpName, Identifier.Axis.X, moveOnX, REPEAT_WHILE_DOWN);
 			im.associateAction(gpName, Identifier.Button._1, quitGame, ON_PRESS_ONLY);
-			cam1GPController = new Camera3PController(camera1, player1, im, gpName);
+			cam1GPController = new Camera3Pcontroller(camera1, player1, im, gpName);
 			isGPOn = true;
 		}
 		else {
@@ -575,6 +613,8 @@ public class GemCollector extends BaseGame {
 	public void update(float elapsedTimeMS) {
 		super.update(elapsedTimeMS);
 		player1.updateAnimation(elapsedTimeMS);
+		
+		
 		if(!isGPOn){
 			cam1Controller.update(elapsedTimeMS);
 		}
@@ -589,8 +629,6 @@ public class GemCollector extends BaseGame {
 		physicsEngine.update(20.0f);
 		Matrix3D mat;
 		Vector3D translateVec;
-		
-		System.out.println(player1.getLocalTranslation().getCol(3).toString());
 		
 		for (SceneNode s : getGameWorld()) {
 
@@ -613,6 +651,13 @@ public class GemCollector extends BaseGame {
 					s.getLocalTranslation().setCol(3, translateVec);
 				}
 			}
+			
+			else if (s instanceof TriMesh &&s.getWorldBound().intersects(player1.getWorldBound())
+					&& (s.getName().equals("src/Models/car.obj") || s.getName().equals("src/Models/truck.obj"))) {
+				playerHit = true;
+			}
+			
+			
 		}
 		player1ScoreString.setText("Score = " + player1Score);
 		player1HPString.setText("HP: " + player1HP);
@@ -623,15 +668,9 @@ public class GemCollector extends BaseGame {
 		skybox.setLocalTranslation(camTranslation);
 		
 		if(playerHit){
-			playerScale -= .00000025f;
-			System.out.println(playerScale);
-			player1.scale(1f, playerScale, 1f);
-			if(playerScale <= .3499888f){
-				playerHit = false;
-				player1.translate(133f, 13f, 123f);
-				player1.setLocalScale(playerInitM);
-				player1.updateWorldBound();
-			}
+			splatSound.play(100, false);
+			player1.translate(133f, 13f, 123f);
+			playerHit = false;
 		}
 		
 		if(gameOver){
@@ -659,9 +698,12 @@ public class GemCollector extends BaseGame {
 
 	protected void shutdown() {
 		super.shutdown();
-		musicSound.release(audioMgr);
+		
+		backgroundMusic.release(audioMgr);
+		splatSound.release(audioMgr);
 		resource1.unload();
 		audioMgr.shutdown();
+		
 		if (gameClient != null) {
 			gameClient.sendByeMessage();
 			try {
@@ -675,10 +717,20 @@ public class GemCollector extends BaseGame {
 
 	public void addGhost(SceneNode ghost) {
 		System.out.println("ghost added");
+		
 		ghost.updateWorldBound();
 		addGameWorldObject(ghost);
 	}
 
+	public void addNPC(SceneNode npc){
+		npcPhys[npcCount] = physicsEngine.addSphereObject(physicsEngine.nextUID(), ballMass, npc.getWorldTransform().getValues(), 1.0f);
+		npcPhys[npcCount].setBounciness(0.0f);
+		npc.setPhysicsObject(npcPhys[npcCount]);
+		npc.updateWorldBound();
+		npcCount++;
+		addGameWorldObject(npc);
+	}
+	
 	public void removeGhost(SceneNode ghost) {
 		removeGameWorldObject(ghost);
 	}
@@ -704,7 +756,7 @@ public class GemCollector extends BaseGame {
 	}
 		
 	public void setGameOver(boolean state){
-		gameOver = state;
+		shutdown();
 	}
 
 }
